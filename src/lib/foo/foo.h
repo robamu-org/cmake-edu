@@ -1,0 +1,4 @@
+
+namespace foo {
+    void magic();
+}
