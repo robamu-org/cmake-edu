@@ -8,7 +8,7 @@ project(foo VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# This adds a library target called "foolib"
+# This adds a library target called "foo"
 add_library(foolib)
 # We assume our project also has a binary target called "fooapp"
 add_executable(fooapp)
@@ -39,3 +39,33 @@ add_subdirectory(src)
 # used for the internal structure, while INTERFACE includes are used for the externally exposed
 # include structure. If both are the same, PUBLIC can be used.
 target_link_libraries(fooapp PRIVATE foolib)
+
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+	include(GNUInstallDirs)
+	# Steps here based on excellent guide: https://dominikberner.ch/cmake-interface-lib/
+    # Which also details all steps
+    include(CMakePackageConfigHelpers)
+    install(TARGETS foolib
+        EXPORT foolibTargets
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/foo)
+    # Generate the package configuration files using CMake provided macros
+    write_basic_package_version_file(
+        "${PROJECT_NAME}ConfigVersion.cmake"
+        COMPATIBILITY SameMajorVersion)
+    configure_package_config_file(
+        "${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in"
+        "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+        INSTALL_DESTINATION
+        ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
+    # Install target file, then package configuration files, and finally the headers
+    install(EXPORT foolibTargets
+        FILE foolibTargets.cmake
+        NAMESPACE ${PROJECT_NAME}::
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
+    install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+        "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
+endif()
